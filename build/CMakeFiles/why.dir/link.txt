@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\why.dir/objects.a
+C:\Users\tokhi\Compilers\C++\mingw64\bin\ar.exe qc CMakeFiles\why.dir/objects.a @CMakeFiles\why.dir\objects1.rsp
+C:\Users\tokhi\Compilers\C++\mingw64\bin\gcc.exe -g -Wl,--whole-archive CMakeFiles\why.dir/objects.a -Wl,--no-whole-archive -o why.exe -Wl,--out-implib,libwhy.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\why.dir\linkLibs.rsp

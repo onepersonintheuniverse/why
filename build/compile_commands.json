@@ -1,0 +1,8 @@
+[
+{
+  "directory": "C:/Users/tokhi/plangs/why/build",
+  "command": "C:\\Users\\tokhi\\Compilers\\C++\\mingw64\\bin\\gcc.exe   -g -std=gnu11 -o CMakeFiles\\why.dir\\why.c.obj -c C:\\Users\\tokhi\\plangs\\why\\why.c",
+  "file": "C:/Users/tokhi/plangs/why/why.c",
+  "output": "CMakeFiles/why.dir/why.c.obj"
+}
+]
