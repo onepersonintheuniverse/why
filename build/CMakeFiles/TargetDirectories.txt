@@ -1,3 +1,0 @@
-C:/Users/tokhi/plangs/why/build/CMakeFiles/why.dir
-C:/Users/tokhi/plangs/why/build/CMakeFiles/edit_cache.dir
-C:/Users/tokhi/plangs/why/build/CMakeFiles/rebuild_cache.dir
