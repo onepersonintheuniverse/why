@@ -1,22 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define STACK 4096
+#include "stacks.h"
+typedef long long s64;
 
-char stack[STACK] = {}; // basic "stack" with 4096 bytes
-char *stack_end = stack; // points to the element after the stack's top
+DECL_WHY_STACK_POP(s64)
+DECL_WHY_STACK_PUSH(s64)
+
 long length; // length of the file
-void push(char x) { // push to the stack
-    if (stack_end == stack + STACK) return;
-    *(stack_end) = x;
-    ++stack_end;
-}
-
-char pop() { // pop from the stack and return the popped element
-    if (stack_end == stack) return 0;
-    --stack_end;
-    return *stack_end;
-}
+struct stack st;
 
 /**
  * @brief bracket/quote matching function. match first instance of `lb` with an instance
@@ -39,32 +31,78 @@ char *match(char *str, char lb, char rb) {
     return str;
 }
 
+char *substr(char *str, int start, int end) {
+    int len = end-start+1;
+    char *new = malloc(len+1);
+    for (char *i = str+start; i < str+end; ++i) {
+        *new = *i;
+        ++new;
+    }
+    *new -= len;
+    return new;
+}
+
 /**
  * @brief the function that will do the running of the program.
  * @param prog the string which contains the program to run.
  */
 void interpret(char *prog) {
     int bracketed = 0;
+    int escaped = 0;
     for (; *prog; ++prog) {
         if (bracketed) {
-            if (*prog == '"') bracketed = 0;
+            if (*prog == '"' || *prog == '#') bracketed = 0;
             continue;
         }
         else if (*prog == '"') {
             char *rq = match(prog, '"', '"');
             bracketed = 1;
-            push(0);
-            for (char *i = rq-1; i > prog; --i) push(*i);
+            push(&st, 0);
+            for (char *i = rq-1; i > prog; --i) {
+                if (*i != '\\') push(&st, *i);
+                else {
+                    if (*(st.st_en-1) == 'n') *(st.st_en-1) = '\n';
+                    if (*(st.st_en-1) == 't') *(st.st_en-1) = '\t';
+                }
+            }
         }
         else if (*prog == 'P') {
             char q;
-            while (q = pop()) putc(q, stdout);
+            while (q = pop(&st)) putc(q, stdout);
+        }
+        else if (*prog == 'p') {
+            printf("%lld", pop_s64(&st));
+        }
+        else if (*prog == '#') {
+            char *rh = match(prog, '#', '#');
+            long long x = 0;
+            long long s = 1;
+            for (char *i = prog+1; i < rh; ++i) {
+                if (*i == '-') s = -1;
+                else x = 10*x + *i - '0';
+            }
+            x *= s;
+            push_s64(&st, x);
+            bracketed = 1;
+        }
+        else if (*prog == '+') {
+            push_s64(&st, pop_s64(&st) + pop_s64(&st));
+        }
+        else if (*prog == '-') {
+            push_s64(&st, pop_s64(&st) - pop_s64(&st));
+        }
+        else if (*prog == '*') {
+            push_s64(&st, pop_s64(&st) * pop_s64(&st));
+        }
+        else if (*prog == '/') {
+            push_s64(&st, pop_s64(&st) / pop_s64(&st));
         }
     }
 }
 
 int main(int argc, char const *argv[]) {
-    FILE *fp = fopen("helloworld.why", "r");
+    init_stack(&st, 4096);
+    FILE *fp = fopen("./examples/helloworld.why", "r");
     // find how long the file is and dump it all in a char *
     fseek(fp, 0, SEEK_END);
     length = ftell(fp);

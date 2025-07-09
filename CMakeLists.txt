@@ -3,4 +3,5 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 
 cmake_minimum_required(VERSION 4.0)
 project(whylang)
+include_directories(include)
 add_executable(why src/why.c)
