@@ -102,6 +102,9 @@ void interpret(char *prog) {
         else if (*prog == '/') {
             push_s64(&st, pop_s64(&st) / pop_s64(&st));
         }
+        else if (*prog == '%') {
+            push_s64(&st, pop_s64(&st) % pop_s64(&st));
+        }
         else if (*prog == '[') {
             char *rb = match(prog, '[', ']');
             char *q = substr(prog+1, rb-1);
