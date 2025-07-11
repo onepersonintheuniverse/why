@@ -152,9 +152,7 @@ void interpret(char *prog) {
             push_s64(&st, c);
         }
         else if (*prog == '$') {
-            s64 a = pop_s64(&st);
-            push_s64(&st, a);
-            push_s64(&st, a);
+            push_s64(&st, *(st.st_en-1));
         }
     }
 }
