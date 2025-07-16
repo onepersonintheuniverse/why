@@ -45,7 +45,6 @@ char *substr(char *start, char *end) {
  */
 void interpret(char *prog) {
     int bracketed[4] = {};
-    char *p = prog;
     for (; *prog; ++prog) {
         if (bracketed[0] || bracketed[1] || bracketed[2] || bracketed[3]) {
             if (*prog == '"' && bracketed[0]) --bracketed[0];
@@ -69,7 +68,7 @@ void interpret(char *prog) {
         }
         else if (*prog == 'P') {
             char q;
-            while (q = pop(&st)) putc(q, stdout);
+            while ((q = pop(&st))) putc(q, stdout);
         }
         else if (*prog == 'p') {
             printf("%lld", pop_s64(&st));
@@ -134,6 +133,9 @@ void interpret(char *prog) {
         else if (*prog == '|') {
             push_s64(&st, pop_s64(&st) || pop_s64(&st));
         }
+        else if (*prog == '\'') {
+            push(&st, (char)pop_s64(&st));
+        }
         else if (*prog == '!') {
             push_s64(&st, !pop_s64(&st));
         }
@@ -152,7 +154,7 @@ void interpret(char *prog) {
             push_s64(&st, c);
         }
         else if (*prog == '$') {
-            push_s64(&st, *(st.st_en-1));
+            push_s64(&st, *(long long *)(st.st_en-8));
         }
     }
 }

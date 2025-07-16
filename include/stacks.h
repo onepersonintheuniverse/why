@@ -5,7 +5,7 @@
     for (int i = 0; i < sizeof(T); i++) pop(st);\
     return val;\
 }
-#define DECL_WHY_STACK_PUSH(T) T push_##T(struct stack *st, T val) {\
+#define DECL_WHY_STACK_PUSH(T) void push_##T(struct stack *st, T val) {\
     for (int i = 0; i < sizeof(T); i++, val >>= 8) push(st, val&255);\
 }
 

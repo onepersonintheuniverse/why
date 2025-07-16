@@ -1,7 +1,19 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(whylang C)
+
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-cmake_minimum_required(VERSION 3.10)
-project(whylang)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+
+set(CMAKE_C_FLAGS "-Wall")
+set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
+set(CMAKE_C_FLAGS_MINISIZEREL "-Os -DNDEBUG")
+set(CMAKE_C_FLAGS_DEBUG "-O0")
+
 include_directories(include)
-add_executable(why src/why.c)
+add_executable(why src/main.c)
