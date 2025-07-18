@@ -3,3 +3,4 @@ CMakeFiles/
 .vscode/
 executables/
 *.exe
+shell.nix

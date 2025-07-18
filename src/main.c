@@ -5,7 +5,13 @@
 typedef long long s64;
 
 DECL_WHY_STACK_POP(s64)
+DECL_WHY_STACK_POP(double)
+
 DECL_WHY_STACK_PUSH(s64)
+DECL_WHY_STACK_PUSH(double)
+
+DECL_WHY_STACK_GET(s64)
+DECL_WHY_STACK_GET(double)
 
 long length; // length of the file
 struct stack st;
@@ -44,117 +50,284 @@ char *substr(char *start, char *end) {
  * @param prog the string which contains the program to run.
  */
 void interpret(char *prog) {
-    int bracketed[4] = {};
+    int bracketed[5] = {};
+    int flag_float = 0;
     for (; *prog; ++prog) {
-        if (bracketed[0] || bracketed[1] || bracketed[2] || bracketed[3]) {
+        char *fmt = flag_float ? "%lf" : "%lld";
+        if (bracketed[0] || bracketed[1] || bracketed[2] || bracketed[3] || bracketed[4]) {
             if (*prog == '"' && bracketed[0]) --bracketed[0];
             if (*prog == '#' && bracketed[1]) --bracketed[1];
             if (*prog == ']' && bracketed[2]) --bracketed[2];
             if (*prog == ')' && bracketed[3]) --bracketed[3];
+            if (*prog == ':' && bracketed[4]) --bracketed[4];
             continue;
         }
-        else if (*prog == '"') {
-            char *rq = match(prog, '"', '"');
-            ++bracketed[0];
-            push(&st, 0);
-            for (char *i = rq-1; i > prog; --i) {
-                if (*i != '\\') push(&st, *i);
-                else {
-                    if (*(st.st_en-1) == 'n') *(st.st_en-1) = '\n';
-                    if (*(st.st_en-1) == 't') *(st.st_en-1) = '\t';
-                    if (*(st.st_en-1) == '\\') *(st.st_en-1) = '\\';
+        else if (flag_float) {
+            if (*prog == '"') { // make string
+                char *rq = match(prog, '"', '"');
+                ++bracketed[0];
+                push(&st, 0);
+                for (char *i = rq-1; i > prog; --i) {
+                    if (*i != '\\') push(&st, *i);
+                    else {
+                        if (*(st.st_en-1) == 'n') *(st.st_en-1) = '\n';
+                        if (*(st.st_en-1) == 't') *(st.st_en-1) = '\t';
+                        if (*(st.st_en-1) == '\\') *(st.st_en-1) = '\\';
+                    }
                 }
             }
-        }
-        else if (*prog == 'P') {
-            char q;
-            while ((q = pop(&st))) putc(q, stdout);
-        }
-        else if (*prog == 'p') {
-            printf("%lld", pop_s64(&st));
-        }
-        else if (*prog == 'g') {
-            s64 x; scanf("%lld", &x);
-            push_s64(&st, x);
-        }
-        else if (*prog == '#') {
-            char *rh = match(prog, '#', '#');
-            long long x = 0;
-            long long s = 1;
-            for (char *i = prog+1; i < rh; ++i) {
-                if (*i == '-') s = -1;
-                else x = 10*x + *i - '0';
+            else if (*prog == 'P') {
+                char q;
+                while ((q = pop(&st))) putc(q, stdout);
             }
-            x *= s;
-            push_s64(&st, x);
-            ++bracketed[1];
-        }
-        else if (*prog == '+') {
-            push_s64(&st, pop_s64(&st) + pop_s64(&st));
-        }
-        else if (*prog == '-') {
-            push_s64(&st, pop_s64(&st) - pop_s64(&st));
-        }
-        else if (*prog == '*') {
-            push_s64(&st, pop_s64(&st) * pop_s64(&st));
-        }
-        else if (*prog == '/') {
-            push_s64(&st, pop_s64(&st) / pop_s64(&st));
-        }
-        else if (*prog == '%') {
-            push_s64(&st, pop_s64(&st) % pop_s64(&st));
-        }
-        else if (*prog == '[') {
-            char *rb = match(prog, '[', ']');
-            char *q = substr(prog+1, rb-1);
-            while (pop_s64(&st)) interpret(q);
-            ++bracketed[2];
-        }
-        else if (*prog == '(') {
-            char *rb = match(prog, '(', ')');
-            char *q = substr(prog+1, rb-1);
-            s64 m = pop_s64(&st);
-            for (s64 i = 0; i < m; ++i)
+            else if (*prog == 'p') {
+                printf(fmt, pop_double(&st));
+            }
+            else if (*prog == 'F') {
+                flag_float = 0;
+            }
+            else if (*prog == 'g') {
+                double x = 0; scanf(fmt, &x);
+                push_double(&st, x);
+            }
+            else if (*prog == '#') {
+                char *rh = match(prog, '#', '#');
+                s64 x = 0;
+                s64 s = 1;
+                for (char *i = prog+1; i < rh; ++i) {
+                    if (*i == '-') s = -1;
+                    else x = 10*x + *i - '0';
+                }
+                x *= s;
+                push_s64(&st, x);
+                ++bracketed[1];
+            }
+            else if (*prog == '+') {
+                push_double(&st, pop_double(&st) + pop_double(&st));
+            }
+            else if (*prog == '-') {
+                push_double(&st, pop_double(&st) - pop_double(&st));
+            }
+            else if (*prog == '*') {
+                push_double(&st, pop_double(&st) * pop_double(&st));
+            }
+            else if (*prog == '/') {
+                push_double(&st, pop_double(&st) / pop_double(&st));
+            }
+            else if (*prog == '%') {
+                push_s64(&st, pop_s64(&st) % pop_s64(&st));
+            }
+            else if (*prog == '[') {
+                char *rb = match(prog, '[', ']');
+                char *q = substr(prog+1, rb-1);
+                while (pop_s64(&st)) interpret(q);
+                ++bracketed[2];
+            }
+            else if (*prog == '(') {
+                char *rb = match(prog, '(', ')');
+                char *q = substr(prog+1, rb-1);
+                s64 m = pop_s64(&st);
+                for (s64 i = 0; i < m; ++i)
                 interpret(q);
-            ++bracketed[3];
-        }
-        else if (*prog == '<') {
-            push_s64(&st, pop_s64(&st) < pop_s64(&st));
-        }
-        else if (*prog == '>') {
-            push_s64(&st, pop_s64(&st) > pop_s64(&st));
-        }
-        else if (*prog == '=') {
-            push_s64(&st, pop_s64(&st) == pop_s64(&st));
-        }
-        else if (*prog == '&') {
-            push_s64(&st, pop_s64(&st) && pop_s64(&st));
-        }
-        else if (*prog == '|') {
-            push_s64(&st, pop_s64(&st) || pop_s64(&st));
-        }
-        else if (*prog == '\'') {
-            push(&st, (char)pop_s64(&st));
-        }
-        else if (*prog == '!') {
-            push_s64(&st, !pop_s64(&st));
-        }
-        else if (*prog == '^') {
-            s64 a = pop_s64(&st);
-            s64 b = pop_s64(&st);
-            push_s64(&st, a);
-            push_s64(&st, b);
-        }
-        else if (*prog == ';') {
-            s64 a = pop_s64(&st);
-            s64 b = pop_s64(&st);
-            s64 c = pop_s64(&st);
-            push_s64(&st, b);
-            push_s64(&st, a);
-            push_s64(&st, c);
-        }
-        else if (*prog == '$') {
-            push_s64(&st, *(long long *)(st.st_en-8));
+                ++bracketed[3];
+            }
+            else if (*prog == '<') {
+                push_s64(&st, pop_double(&st) < pop_double(&st));
+            }
+            else if (*prog == '>') {
+                push_s64(&st, pop_double(&st) > pop_double(&st));
+            }
+            else if (*prog == '=') {
+                push_s64(&st, pop_double(&st) == pop_double(&st));
+            }
+            else if (*prog == '&') {
+                push_s64(&st, pop_s64(&st) && pop_s64(&st));
+            }
+            else if (*prog == '|') {
+                push_s64(&st, pop_s64(&st) || pop_s64(&st));
+            }
+            else if (*prog == '\'') {
+                push(&st, (char)pop_s64(&st));
+            }
+            else if (*prog == '!') {
+                push_s64(&st, !pop_s64(&st));
+            }
+            else if (*prog == '^') {
+                s64 a = pop_s64(&st);
+                s64 b = pop_s64(&st);
+                push_s64(&st, a);
+                push_s64(&st, b);
+            }
+            else if (*prog == ';') {
+                s64 a = pop_s64(&st);
+                s64 b = pop_s64(&st);
+                s64 c = pop_s64(&st);
+                push_s64(&st, b);
+                push_s64(&st, a);
+                push_s64(&st, c);
+            }
+            else if (*prog == '~') {
+                s64 shuf_amt = pop_s64(&st);
+                s64 q = *get_at_s64(&st, shuf_amt);
+                for (int i = shuf_amt; i >= 2; --i) {
+                    *get_at_s64(&st, i) = *get_at_s64(&st, i-1);
+                }
+                *get_at_s64(&st, 1) = q;
+            }
+            else if (*prog == ':') {
+                char *rc = match(prog, ':', ':');
+                double s = 1;
+                double e = 1;
+                double x = 0;
+                int postdot = 0;
+                for (char *i = prog+1; i < rc; ++i) {
+                    if (postdot) {
+                        e /= 10.0;
+                        x += (double)(*i-'0')*e;
+                    } else {
+                        x = 10.0*x + (double)(*i-'0');
+                    }
+                }
+                push_double(&st, x);
+            }
+            else if (*prog == '$') {
+                push_s64(&st, *(long long *)(st.st_en-8));
+            }
+        } else {
+            if (*prog == '"') { // make string
+                char *rq = match(prog, '"', '"');
+                ++bracketed[0];
+                push(&st, 0);
+                for (char *i = rq-1; i > prog; --i) {
+                    if (*i != '\\') push(&st, *i);
+                    else {
+                        if (*(st.st_en-1) == 'n') *(st.st_en-1) = '\n';
+                        if (*(st.st_en-1) == 't') *(st.st_en-1) = '\t';
+                        if (*(st.st_en-1) == '\\') *(st.st_en-1) = '\\';
+                    }
+                }
+            }
+            else if (*prog == 'P') {
+                char q;
+                while ((q = pop(&st))) putc(q, stdout);
+            }
+            else if (*prog == 'p') {
+                printf(fmt, pop_s64(&st));
+            }
+            else if (*prog == 'F') {
+                flag_float = 1;
+            }
+            else if (*prog == 'g') {
+                double x = 0; scanf(fmt, &x);
+                push_s64(&st, x);
+            }
+            else if (*prog == '#') {
+                char *rh = match(prog, '#', '#');
+                s64 x = 0;
+                s64 s = 1;
+                for (char *i = prog+1; i < rh; ++i) {
+                    if (*i == '-') s = -1;
+                    else x = 10*x + *i - '0';
+                }
+                x *= s;
+                push_s64(&st, x);
+                ++bracketed[1];
+            }
+            else if (*prog == '+') {
+                push_s64(&st, pop_s64(&st) + pop_s64(&st));
+            }
+            else if (*prog == '-') {
+                push_s64(&st, pop_s64(&st) - pop_s64(&st));
+            }
+            else if (*prog == '*') {
+                push_s64(&st, pop_s64(&st) * pop_s64(&st));
+            }
+            else if (*prog == '/') {
+                push_s64(&st, pop_s64(&st) / pop_s64(&st));
+            }
+            else if (*prog == '%') {
+                push_s64(&st, pop_s64(&st) % pop_s64(&st));
+            }
+            else if (*prog == '[') {
+                char *rb = match(prog, '[', ']');
+                char *q = substr(prog+1, rb-1);
+                while (pop_s64(&st)) interpret(q);
+                ++bracketed[2];
+            }
+            else if (*prog == '(') {
+                char *rb = match(prog, '(', ')');
+                char *q = substr(prog+1, rb-1);
+                s64 m = pop_s64(&st);
+                for (s64 i = 0; i < m; ++i)
+                interpret(q);
+                ++bracketed[3];
+            }
+            else if (*prog == '<') {
+                push_s64(&st, pop_s64(&st) < pop_s64(&st));
+            }
+            else if (*prog == '>') {
+                push_s64(&st, pop_s64(&st) > pop_s64(&st));
+            }
+            else if (*prog == '=') {
+                push_s64(&st, pop_s64(&st) == pop_s64(&st));
+            }
+            else if (*prog == '&') {
+                push_s64(&st, pop_s64(&st) && pop_s64(&st));
+            }
+            else if (*prog == '|') {
+                push_s64(&st, pop_s64(&st) || pop_s64(&st));
+            }
+            else if (*prog == '\'') {
+                push(&st, (char)pop_s64(&st));
+            }
+            else if (*prog == '!') {
+                push_s64(&st, !pop_s64(&st));
+            }
+            else if (*prog == '^') {
+                s64 a = pop_s64(&st);
+                s64 b = pop_s64(&st);
+                push_s64(&st, a);
+                push_s64(&st, b);
+            }
+            else if (*prog == ';') {
+                s64 a = pop_s64(&st);
+                s64 b = pop_s64(&st);
+                s64 c = pop_s64(&st);
+                push_s64(&st, b);
+                push_s64(&st, a);
+                push_s64(&st, c);
+            }
+            else if (*prog == '~') {
+                s64 shuf_amt = pop_s64(&st);
+                s64 q = *get_at_s64(&st, shuf_amt);
+                for (int i = shuf_amt; i >= 2; --i) {
+                    *get_at_s64(&st, i) = *get_at_s64(&st, i-1);
+                }
+                *get_at_s64(&st, 1) = q;
+            }
+            else if (*prog == ':') {
+                char *rc = match(prog, ':', ':');
+                double x = 0;
+                double s = 1;
+                double e = 1;
+                int postdot = 0;
+                for (char *i = prog+1; i < rc; ++i) {
+                    if (*i == '-') {
+                        s *= -1;
+                    } else if (*i == '.') {
+                        postdot = 1; 
+                    } else if (postdot) {
+                        e /= 10.0;
+                        x += (double)(*i-'0')*e;
+                    } else {
+                        x = 10.0*x + (double)(*i-'0');
+                    }
+                }
+                push_double(&st, s*x);
+            }
+            else if (*prog == '$') {
+                push_s64(&st, *(long long *)(st.st_en-8));
+            }
         }
     }
 }
