@@ -344,6 +344,7 @@ void interpret(char *prog) {
                 char *rs = match(prog, 'S', 's');
                 subr[nsr] = substr(prog+1, rs-1);
                 nsr++;
+                prog = rs;
             }
             else if (*prog == 'Q') {
                 interpret(subr[pop_s64(&st)]);
