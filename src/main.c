@@ -194,6 +194,14 @@ void interpret(char *prog) {
             else if (*prog == '?') {
                 push_s64(&st, st.st_en-st.st);
             }
+            else if (*prog == 'S') {
+                char *rs = match(prog, 'S', 's');
+                subr[nsr] = substr(prog+1, rs-1);
+                nsr++;
+            }
+            else if (*prog == 'Q') {
+                interpret(subr[pop_s64(&st)]);
+            }
         } else {
             if (*prog == '"') { // make string
                 char *rq = match(prog, '"', '"');
