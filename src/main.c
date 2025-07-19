@@ -15,7 +15,8 @@ DECL_WHY_STACK_GET(double)
 
 long length; // length of the file
 struct stack st;
-
+char *subr[4096];
+int nsr = 0;
 /**
  * @brief bracket/quote matching function. match first instance of `lb` with an instance
  * @brief of `rb` and return pointer to said instance of `rb`.
@@ -330,6 +331,14 @@ void interpret(char *prog) {
             }
             else if (*prog == '?') {
                 push_s64(&st, st.st_en-st.st);
+            }
+            else if (*prog == 'S') {
+                char *rs = match(prog, 'S', 's');
+                subr[nsr] = substr(prog+1, rs-1);
+                nsr++;
+            }
+            else if (*prog == 'Q') {
+                interpret(subr[pop_s64(&st)]);
             }
         }
     }
