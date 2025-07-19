@@ -50,22 +50,12 @@ char *substr(char *start, char *end) {
  * @param prog the string which contains the program to run.
  */
 void interpret(char *prog) {
-    int bracketed[5] = {};
     int flag_float = 0;
     for (; *prog; ++prog) {
-        char *fmt = flag_float ? "%lf" : "%lld";
-        if (bracketed[0] || bracketed[1] || bracketed[2] || bracketed[3] || bracketed[4]) {
-            if (*prog == '"' && bracketed[0]) --bracketed[0];
-            if (*prog == '#' && bracketed[1]) --bracketed[1];
-            if (*prog == ']' && bracketed[2]) --bracketed[2];
-            if (*prog == ')' && bracketed[3]) --bracketed[3];
-            if (*prog == ':' && bracketed[4]) --bracketed[4];
-            continue;
-        }
-        else if (flag_float) {
+        char *fmt = flag_float ? "%f" : "%lld";
+        if (flag_float) {
             if (*prog == '"') { // make string
                 char *rq = match(prog, '"', '"');
-                ++bracketed[0];
                 push(&st, 0);
                 for (char *i = rq-1; i > prog; --i) {
                     if (*i != '\\') push(&st, *i);
@@ -75,19 +65,21 @@ void interpret(char *prog) {
                         if (*(st.st_en-1) == '\\') *(st.st_en-1) = '\\';
                     }
                 }
+                prog = rq;
             }
             else if (*prog == 'P') {
                 char q;
                 while ((q = pop(&st))) putc(q, stdout);
             }
             else if (*prog == 'p') {
-                printf(fmt, pop_double(&st));
+                s64 recv = pop_double(&st);
+                printf(fmt, recv);
             }
             else if (*prog == 'F') {
                 flag_float = 0;
             }
             else if (*prog == 'g') {
-                double x = 0; scanf(fmt, &x);
+                double x; scanf(fmt, &x);
                 push_double(&st, x);
             }
             else if (*prog == '#') {
@@ -100,7 +92,7 @@ void interpret(char *prog) {
                 }
                 x *= s;
                 push_s64(&st, x);
-                ++bracketed[1];
+                prog = rh;
             }
             else if (*prog == '+') {
                 push_double(&st, pop_double(&st) + pop_double(&st));
@@ -121,7 +113,7 @@ void interpret(char *prog) {
                 char *rb = match(prog, '[', ']');
                 char *q = substr(prog+1, rb-1);
                 while (pop_s64(&st)) interpret(q);
-                ++bracketed[2];
+                prog = rb;
             }
             else if (*prog == '(') {
                 char *rb = match(prog, '(', ')');
@@ -129,7 +121,7 @@ void interpret(char *prog) {
                 s64 m = pop_s64(&st);
                 for (s64 i = 0; i < m; ++i)
                 interpret(q);
-                ++bracketed[3];
+                prog = rb;
             }
             else if (*prog == '<') {
                 push_s64(&st, pop_double(&st) < pop_double(&st));
@@ -181,22 +173,29 @@ void interpret(char *prog) {
                 double x = 0;
                 int postdot = 0;
                 for (char *i = prog+1; i < rc; ++i) {
-                    if (postdot) {
+                    if (*i == '-') {
+                        s *= -1;
+                    } else if (*i == '.') {
+                        postdot = 1; 
+                    } else if (postdot) {
                         e /= 10.0;
                         x += (double)(*i-'0')*e;
                     } else {
                         x = 10.0*x + (double)(*i-'0');
-                    }
+                    }; printf("%f ", x);
                 }
-                push_double(&st, x);
+                push_double(&st, s*x);
+                prog = rc;
             }
             else if (*prog == '$') {
                 push_s64(&st, *(long long *)(st.st_en-8));
             }
+            else if (*prog == '?') {
+                push_s64(&st, st.st_en-st.st);
+            }
         } else {
             if (*prog == '"') { // make string
                 char *rq = match(prog, '"', '"');
-                ++bracketed[0];
                 push(&st, 0);
                 for (char *i = rq-1; i > prog; --i) {
                     if (*i != '\\') push(&st, *i);
@@ -206,6 +205,7 @@ void interpret(char *prog) {
                         if (*(st.st_en-1) == '\\') *(st.st_en-1) = '\\';
                     }
                 }
+                prog = rq;
             }
             else if (*prog == 'P') {
                 char q;
@@ -218,7 +218,7 @@ void interpret(char *prog) {
                 flag_float = 1;
             }
             else if (*prog == 'g') {
-                double x = 0; scanf(fmt, &x);
+                s64 x = 0; scanf(fmt, &x);
                 push_s64(&st, x);
             }
             else if (*prog == '#') {
@@ -231,7 +231,7 @@ void interpret(char *prog) {
                 }
                 x *= s;
                 push_s64(&st, x);
-                ++bracketed[1];
+                prog = rh;
             }
             else if (*prog == '+') {
                 push_s64(&st, pop_s64(&st) + pop_s64(&st));
@@ -252,15 +252,14 @@ void interpret(char *prog) {
                 char *rb = match(prog, '[', ']');
                 char *q = substr(prog+1, rb-1);
                 while (pop_s64(&st)) interpret(q);
-                ++bracketed[2];
+                prog = rb;
             }
             else if (*prog == '(') {
                 char *rb = match(prog, '(', ')');
                 char *q = substr(prog+1, rb-1);
                 s64 m = pop_s64(&st);
-                for (s64 i = 0; i < m; ++i)
-                interpret(q);
-                ++bracketed[3];
+                for (s64 i = 0; i < m; ++i) interpret(q);
+                prog = rb;
             }
             else if (*prog == '<') {
                 push_s64(&st, pop_s64(&st) < pop_s64(&st));
@@ -324,9 +323,13 @@ void interpret(char *prog) {
                     }
                 }
                 push_double(&st, s*x);
+                prog = rc;
             }
             else if (*prog == '$') {
                 push_s64(&st, *(long long *)(st.st_en-8));
+            }
+            else if (*prog == '?') {
+                push_s64(&st, st.st_en-st.st);
             }
         }
     }

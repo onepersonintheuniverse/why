@@ -32,7 +32,7 @@ const int __WHYLANG_CONST_ORZIUM = 23; // easter egg because why not
  */
 #define DECL_WHY_STACK_PUSH(T) void push_##T(struct stack *st, T val) {\
     s64 q = _bitcast(s64, val);\
-    for (int i = 0; i < sizeof(T); i++, q >>= 8) push(st, _bitcast(s64, val)&255);\
+    for (int i = 0; i < sizeof(T); i++, q >>= 8) push(st, q&255);\
 }
 
 /**
