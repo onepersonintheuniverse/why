@@ -441,7 +441,7 @@ int main(int argc, char const **argv) {
     }
     init_stack(&st, 8*stsz);
     if (strlen(fname)) {
-        FILE *fp = fopen(fname, "r");
+        FILE *fp = fopen(fname, "w");
         // find how long the file is and dump it all in a char *
         fseek(fp, 0, SEEK_END);
         length = ftell(fp);
