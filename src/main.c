@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stacks.h>
+#include "stacks.h"
 typedef long long s64;
+
+int dump = 0;
 
 DECL_WHY_STACK_POP(s64)
 DECL_WHY_STACK_POP(double)
@@ -50,8 +52,10 @@ char *substr(char *start, char *end) {
  * @brief the function that will do the running of the program.
  * @param prog the string which contains the program to run.
  */
-void interpret(char *prog) {
-    int flag_float = 0;
+int interpret(char *prog, FILE *ahmet23) {
+    int flag_float = 0, flag_break = 0;
+    char *p = prog;
+    if (dump) fprintf(ahmet23, "/-----\\\n");
     for (; *prog; ++prog) {
         char *fmt = flag_float ? "%f" : "%lld";
         if (flag_float) {
@@ -113,7 +117,7 @@ void interpret(char *prog) {
             else if (*prog == '[') {
                 char *rb = match(prog, '[', ']');
                 char *q = substr(prog+1, rb-1);
-                while (pop_s64(&st)) interpret(q);
+                while (pop_s64(&st)) interpret(q, ahmet23);
                 prog = rb;
             }
             else if (*prog == '(') {
@@ -121,7 +125,7 @@ void interpret(char *prog) {
                 char *q = substr(prog+1, rb-1);
                 s64 m = pop_s64(&st);
                 for (s64 i = 0; i < m; ++i)
-                interpret(q);
+                interpret(q, ahmet23);
                 prog = rb;
             }
             else if (*prog == '<') {
@@ -200,8 +204,14 @@ void interpret(char *prog) {
                 nsr++;
             }
             else if (*prog == 'Q') {
-                interpret(subr[pop_s64(&st)]);
+                interpret(subr[pop_s64(&st)], ahmet23);
             }
+            else if (*prog == 'q') {
+                pop_s64(&st);
+            }
+            else if (*prog == 'b') {
+                flag_break = !pop_s64(&st);
+            };
         } else {
             if (*prog == '"') { // make string
                 char *rq = match(prog, '"', '"');
@@ -260,14 +270,14 @@ void interpret(char *prog) {
             else if (*prog == '[') {
                 char *rb = match(prog, '[', ']');
                 char *q = substr(prog+1, rb-1);
-                while (pop_s64(&st)) interpret(q);
+                while (pop_s64(&st)) if (interpret(q, ahmet23) == 2) break;
                 prog = rb;
             }
             else if (*prog == '(') {
                 char *rb = match(prog, '(', ')');
                 char *q = substr(prog+1, rb-1);
                 s64 m = pop_s64(&st);
-                for (s64 i = 0; i < m; ++i) interpret(q);
+                for (s64 i = 0; i < m; ++i) if (interpret(q, ahmet23) == 2) break;
                 prog = rb;
             }
             else if (*prog == '<') {
@@ -347,20 +357,91 @@ void interpret(char *prog) {
                 prog = rs;
             }
             else if (*prog == 'Q') {
-                interpret(subr[pop_s64(&st)]);
+                interpret(subr[pop_s64(&st)], ahmet23);
+            }
+            else if (*prog == 'q') {
+                pop_s64(&st);
+            }
+            else if (*prog == 'b') {
+                flag_break = !pop_s64(&st);
+            };
+        }
+        if (dump) {
+            fprintf(ahmet23, "%td %c | ", prog-p, *prog);
+            for (s64 *i = (s64 *)st.st; i < (s64 *)st.st_en; i++) { fprintf(ahmet23, "%lld ", *i); }
+            fprintf(ahmet23, "\n");
+        }
+        if (flag_break) { if (dump) fprintf(ahmet23, "\\-----/\n"); return 2; }
+    }
+    if (dump) fprintf(ahmet23, "\\-----/\n");
+    return 0;
+}
+
+int main(int argc, char const **argv) {
+    FILE *ahmet23 = fopen("dump.txt", "w");
+    char *fname = malloc(1024);
+    memset(fname, 0, 1024);
+    int stsz = 4096;
+    int paramno = 0;
+    int paramtyp = -1;
+    for (int i = 1; i < argc; i++) {
+        if (**(argv+i) == '-') {
+            switch (*(*(argv+i)+1)) {
+            case 'f':
+                paramtyp = 0;
+                break;
+
+            case 's':
+                paramtyp = 1;
+                break;
+
+            case 'd':
+                dump = 1;
+                break;
+            
+            case 'V':
+                printf("I didn't set a version yet lol\n");
+                return 0;
+            
+            case '?':
+                printf("whylang interpreter\n-f: set file\n-s: set stack size\n-d: set dump\n-v: set version\n-?: help\n");
+                return 0;
+
+            default:
+                break;
+            }
+        } else if (paramtyp == -1) {
+            switch (paramno) {
+            case 0:
+                strcpy(fname, *(argv+i));
+                break;
+            
+            case 1:
+                sscanf(*(argv+i), "%d", &stsz);
+                break;
+            
+            default:
+                break;
+            }
+            paramno++;
+        } else {
+            switch (paramtyp) {
+            case 0:
+                strncpy(fname, *(argv+i), 1023);
+                break;
+            
+            case 1:
+                sscanf(*(argv+i), "%d", &stsz);
+                break;
+            
+            default:
+                break;
             }
         }
     }
-}
-
-int main(int argc, char const *argv[]) {
-    if (argc >= 2) {
-        int stsz = 4096;
-        if (argc >= 3) {
-            sscanf(*(argv+2), "%d", &stsz);
-        }
-        init_stack(&st, 8*stsz);
-        FILE *fp = fopen(*(argv+1), "r");
+    init_stack(&st, 8*stsz);
+    if (strlen(fname)) {
+        FILE *fp = fopen(fname, "r");
         // find how long the file is and dump it all in a char *
         fseek(fp, 0, SEEK_END);
         length = ftell(fp);
@@ -368,13 +449,16 @@ int main(int argc, char const *argv[]) {
         char *buffer = malloc(length+1);
         *(buffer+length) = 0;
         fread(buffer, 1, length, fp);
-        interpret(buffer);
+        interpret(buffer, ahmet23);
+        free(st.st);
+        free(buffer);
+        free(fname);
         return 0;
     }
-    init_stack(&st, 4096);
     while (1) {
         printf("\nkwhy> ");
         char *q = malloc(1024); fgets(q, 1024, stdin);
-        interpret(q);
+        interpret(q, ahmet23);
+        free(q);
     }
 }

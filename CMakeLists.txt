@@ -9,10 +9,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-if (BIG_ENDIAN)
-    add_compile_definitions(BIG_ENDIAN)
-endif()
-
 set(CMAKE_C_FLAGS "-Wall")
 set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
 set(CMAKE_C_FLAGS_MINISIZEREL "-Os -DNDEBUG")
