@@ -350,6 +350,9 @@ int interpret(char *prog, FILE *ahmet23) {
             else if (*prog == '?') {
                 push_s64(&st, st.st_en-st.st);
             }
+            else if (*prog == 'n') {
+                push_s64(&st, (st.st_en-st.st)/8);
+            }
             else if (*prog == 'S') {
                 char *rs = match(prog, 'S', 's');
                 subr[nsr] = substr(prog+1, rs-1);
