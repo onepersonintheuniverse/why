@@ -138,10 +138,10 @@ int interpret(char *prog, FILE *ahmet23) {
                 push_s64(&st, pop_double(&st) == pop_double(&st));
             }
             else if (*prog == '&') {
-                push_s64(&st, pop_s64(&st) && pop_s64(&st));
+                push_s64(&st, !!pop_s64(&st) & !!pop_s64(&st));
             }
             else if (*prog == '|') {
-                push_s64(&st, pop_s64(&st) || pop_s64(&st));
+                push_s64(&st, !!pop_s64(&st) & !!pop_s64(&st));
             }
             else if (*prog == '\'') {
                 push(&st, (char)pop_s64(&st));
@@ -198,6 +198,9 @@ int interpret(char *prog, FILE *ahmet23) {
             else if (*prog == '?') {
                 push_s64(&st, st.st_en-st.st);
             }
+            else if (*prog == 'n') {
+                push_s64(&st, (st.st_en-st.st)/8);
+            }
             else if (*prog == 'S') {
                 char *rs = match(prog, 'S', 's');
                 subr[nsr] = substr(prog+1, rs-1);
@@ -211,7 +214,10 @@ int interpret(char *prog, FILE *ahmet23) {
             }
             else if (*prog == 'b') {
                 flag_break = !pop_s64(&st);
-            };
+            }
+            else if (*prog == 'B') {
+                flag_break = 1;
+            }
         } else {
             if (*prog == '"') { // make string
                 char *rq = match(prog, '"', '"');
@@ -290,10 +296,10 @@ int interpret(char *prog, FILE *ahmet23) {
                 push_s64(&st, pop_s64(&st) == pop_s64(&st));
             }
             else if (*prog == '&') {
-                push_s64(&st, pop_s64(&st) && pop_s64(&st));
+                push_s64(&st, !!pop_s64(&st) & !!pop_s64(&st));
             }
             else if (*prog == '|') {
-                push_s64(&st, pop_s64(&st) || pop_s64(&st));
+                push_s64(&st, !!pop_s64(&st) | !!pop_s64(&st));
             }
             else if (*prog == '\'') {
                 push(&st, (char)pop_s64(&st));
@@ -367,7 +373,10 @@ int interpret(char *prog, FILE *ahmet23) {
             }
             else if (*prog == 'b') {
                 flag_break = !pop_s64(&st);
-            };
+            }
+            else if (*prog == 'B') {
+                flag_break = 1;
+            }
         }
         if (dump) {
             fprintf(ahmet23, "%td %c | ", prog-p, *prog);
@@ -382,6 +391,7 @@ int interpret(char *prog, FILE *ahmet23) {
 
 int main(int argc, char const **argv) {
     FILE *ahmet23 = fopen("dump.txt", "w");
+    setvbuf(ahmet23, NULL, _IONBF, 2323);
     char *fname = malloc(1024);
     memset(fname, 0, 1024);
     int stsz = 4096;
